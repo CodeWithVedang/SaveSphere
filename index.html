@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pinterest Latest Pins</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+ <link href="style.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="skeleton-channel">
+      <div class="channel-header">
+        <div class="skeleton-photo"></div>
+        <div class="skeleton-title"></div>
+      </div>
+      <div class="skeleton-desc"></div>
+      <div class="skeleton-desc"></div>
+      <div class="skeleton-button"></div>
+    </div>
+    <div class="channel-info" style="display: none;">
+      <div class="channel-header">
+        <img id="profile-photo" src="https://i.pinimg.com/280x280_RS/5d/16/08/5d1608141a7b433a54a7a06898e97f69.jpg" alt="Save Sphere profile photo" class="profile-photo" />
+        <h1 id="channel-title">Loading...</h1>
+      </div>
+      <p id="channel-desc">Fetching channel description...</p>
+      <a href="#" id="profile-button" class="profile-button" aria-label="Visit Pinterest profile">Visit Profile</a>
+    </div>
+    <button class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+  </header>
+  <div id="posts-container">
+    <div class="skeleton">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-text"></div>
+    </div>
+    <div class="skeleton">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-text"></div>
+    </div>
+  </div>
+  <footer>
+    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo" />
+    <span>Developed by CodeWithVedang by <a href="https://github.com/CodeWithVedang/" target="_blank" rel="noopener noreferrer">https://github.com/CodeWithVedang/</a></span>
+  </footer>
+ <script src="script.js"></script>
+</body>
+</html>

@@ -4,9 +4,10 @@ function toggleTheme() {
   html.dataset.theme = isDark ? 'light' : 'dark';
 }
 
-function applyDefaultTheme() {
-  // Set default theme without reading or saving to localStorage
-  document.documentElement.dataset.theme = 'light';
+function applyAutoTheme() {
+  const hour = new Date().getHours();
+  const isNight = hour < 6 || hour >= 18; // 6 PM to 6 AM is night
+  document.documentElement.dataset.theme = isNight ? 'dark' : 'light';
 }
 
 async function loadRSS() {
@@ -63,7 +64,6 @@ async function loadRSS() {
           </div>
         </a>
       `;
-
       container.appendChild(postDiv);
     });
   } catch (error) {
@@ -75,5 +75,5 @@ async function loadRSS() {
 }
 
 document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
-applyDefaultTheme();
+applyAutoTheme();
 loadRSS();

@@ -8,6 +8,7 @@ function applyAutoTheme() {
   const hour = new Date().getHours();
   const isNight = hour < 6 || hour >= 18; // 6 PM to 6 AM is night
   document.documentElement.dataset.theme = isNight ? 'dark' : 'light';
+  console.log(`Auto theme applied: ${isNight ? 'dark' : 'light'}`);
 }
 
 async function loadRSS() {

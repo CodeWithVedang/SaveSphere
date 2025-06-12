@@ -9,17 +9,17 @@ import json
 
 # Pinterest RSS feed URL
 RSS_URL = "https://in.pinterest.com/Save_Sphere/feed.rss"
-# Add at the top of the script
-# Load credentials from environment variable
-credentials = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-with open("credentials.json", "w") as f:
-    json.dump(credentials, f)
-    
+
 # Google Sheets setup
 SHEET_ID = "1cBdL21Uq6Apcfalla0NSoyyK7PhfeTLGAyr7hDSU1Wk"  # Replace with your Google Sheet ID
-SHEET_NAME = "Pinterest Pins"  # Worksheet name
+SHEET_NAME = "Pinterest Pins" # Worksheet name
 CREDENTIALS_FILE = "credentials.json"
 
+# Load credentials from environment variable (for GitHub Actions)
+if os.getenv("GOOGLE_CREDENTIALS"):
+    credentials = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+    with open(CREDENTIALS_FILE, "w") as f:
+        json.dump(credentials, f)
 
 # Authenticate with Google Sheets
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -34,26 +34,41 @@ def extract_image_url(description):
     img_match = re.search(r'<img[^>]+src=["\'](.*?)["\']', description, re.IGNORECASE)
     return img_match.group(1) if img_match else ""
 
+# Fetch RSS feed with retry
+def fetch_rss_with_retry(url, retries=3):
+    for attempt in range(retries):
+        try:
+            feed = feedparser.parse(url)
+            if feed.bozo:
+                raise Exception(f"Feed parsing failed: {feed.bozo_exception}")
+            return feed
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                sleep(5 * (2 ** attempt))
+    raise Exception("Max retries exceeded for RSS feed")
+
 # Fetch RSS feed
-feed = feedparser.parse(RSS_URL)
-if feed.bozo:
-    raise Exception("Failed to parse RSS feed")
+feed = fetch_rss_with_retry(RSS_URL)
 
 # Extract pin details
 pins = []
 for entry in feed.entries:
     description = entry.get("description", "")
     pin = {
-        "title": entry.get("title", ""),
-        "link": entry.get("link", ""),
-        "image": extract_image_url(description),
-        "description": re.sub(r'<[^>]+>', '', description).strip(),  # Remove HTML tags
-        "published_date": entry.get("published", "")
+        "Title": entry.get("title", ""),
+        "Link": entry.get("link", ""),
+        "Image": extract_image_url(description),
+        "Description": re.sub(r'<[^>]+>', '', description).strip(),  # Remove HTML tags
+        "Published Date": entry.get("published", "")
     }
     pins.append(pin)
 
 # Convert to DataFrame
 df = pd.DataFrame(pins)
+
+# Define headers
+headers = ["Title", "Link", "Image", "Description", "Published Date"]
 
 # Get existing data from sheet to avoid duplicates
 try:
@@ -64,10 +79,7 @@ except Exception as e:
     existing_links = []
 
 # Filter out duplicates
-new_pins = df[~df["link"].isin(existing_links)]
-
-# Define headers
-headers = ["Title", "Link", "Image", "Description", "Published Date"]
+new_pins = df[~df["Link"].isin(existing_links)]
 
 # Write headers if sheet is empty
 if not sheet.get_all_values():
@@ -75,8 +87,12 @@ if not sheet.get_all_values():
 
 # Append new data
 if not new_pins.empty:
-    sheet.append_rows(new_pins[headers].values.tolist())
-    print(f"Added {len(new_pins)} new pins to the sheet.")
+    try:
+        sheet.append_rows(new_pins[headers].values.tolist())
+        print(f"Added {len(new_pins)} new pins to the sheet.")
+    except Exception as e:
+        print(f"Error appending rows: {e}")
+        raise
 else:
     print("No new pins to add.")
 

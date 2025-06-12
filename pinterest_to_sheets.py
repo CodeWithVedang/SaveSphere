@@ -6,13 +6,14 @@ from datetime import datetime
 import re
 import os
 import json
+from time import sleep
 
 # Pinterest RSS feed URL
 RSS_URL = "https://in.pinterest.com/Save_Sphere/feed.rss"
 
 # Google Sheets setup
 SHEET_ID = "1cBdL21Uq6Apcfalla0NSoyyK7PhfeTLGAyr7hDSU1Wk"  # Replace with your Google Sheet ID
-SHEET_NAME = "Pinterest Pins" # Worksheet name
+SHEET_NAME = "Pinterest Pins"  # Worksheet name
 CREDENTIALS_FILE = "credentials.json"
 
 # Load credentials from environment variable (for GitHub Actions)
@@ -60,7 +61,8 @@ for entry in feed.entries:
         "Link": entry.get("link", ""),
         "Image": extract_image_url(description),
         "Description": re.sub(r'<[^>]+>', '', description).strip(),  # Remove HTML tags
-        "Published Date": entry.get("published", "")
+        "Published Date": entry.get("published", ""),
+        "Affiliate Link": ""  # Initialize as empty
     }
     pins.append(pin)
 
@@ -68,7 +70,7 @@ for entry in feed.entries:
 df = pd.DataFrame(pins)
 
 # Define headers
-headers = ["Title", "Link", "Image", "Description", "Published Date"]
+headers = ["Title", "Link", "Image", "Description", "Published Date", "Affiliate Link"]
 
 # Get existing data from sheet to avoid duplicates
 try:

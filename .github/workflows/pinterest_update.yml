@@ -2,7 +2,7 @@ name: Update Google Sheet with Pinterest RSS
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs daily at midnight UTC
+    - cron: "0 0 * * *"  # Runs daily at midnight UTC (5:30 AM IST)
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
@@ -23,7 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install feedparser gspread oauth2client pandas
 
-      - name: Run Python script
+      - name: Run Pinterest RSS to Sheets script
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python pinterest_to_sheets.py
+
+      - name: Run Affiliate Link Extraction script
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python extract_affiliate_links.py

@@ -1,0 +1,30 @@
+name: Update Pinterest RSS to Google Sheet
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # runs every day at 2:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  update-sheet:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install feedparser gspread google-auth beautifulsoup4
+
+      - name: Create credentials.json
+        run: |
+          echo "${{ secrets.GOOGLE_SHEET_CREDENTIALS_JSON }}" > credentials.json
+
+      - name: Run script
+        run: python update_pinterest_sheet.py

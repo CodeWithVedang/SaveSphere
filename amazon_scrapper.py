@@ -55,7 +55,7 @@ def fetch_products(category, url):
             return []
 
         soup = BeautifulSoup(res.text, "lxml")
-        product_list = soup.select("ol#zg-ordered-list > li")
+        product_list = soup.select("div.p13n-grid-content > div")
         print(f"[{category}] Products found: {len(product_list)}")
 
         if not product_list:
@@ -64,22 +64,27 @@ def fetch_products(category, url):
 
         data = []
         for item in product_list[:10]:
-            title = item.select_one(".p13n-sc-truncate") or item.select_one(".a-size-medium")
-            link = item.select_one("a.a-link-normal")
-            price = item.select_one(".p13n-sc-price") or item.select_one(".a-offscreen")
+            title_tag = item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_g3dy1")
+            link_tag = item.select_one("a.a-link-normal")
+            price_tag = item.select_one(".a-price span.a-offscreen")
+
+            title = title_tag.text.strip() if title_tag else ""
+            link = "https://www.amazon.in" + link_tag["href"] if link_tag else ""
+            price = price_tag.text.strip() if price_tag else ""
 
             data.append([
                 datetime.now().strftime("%Y-%m-%d %H:%M"),
                 category,
-                title.text.strip() if title else "",
-                "https://amazon.in" + link["href"] if link else "",
-                price.text.strip() if price else ""
+                title,
+                link,
+                price
             ])
         return data
 
     except Exception as e:
         print(f"[{category}] ❌ Error: {e}")
         return []
+
 
 # Setup sheet headers
 try:

@@ -2,7 +2,7 @@ name: Amazon Scrapper Bot
 
 on:
   schedule:
-    - cron: '30 5 * * *'  # 11:00 AM IST daily
+    - cron: '30 5 * * *'  # 11:00 AM IST
   workflow_dispatch:
 
 jobs:

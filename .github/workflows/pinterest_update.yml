@@ -2,8 +2,8 @@ name: Update Google Sheet with Pinterest RSS
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs daily at midnight UTC (5:30 AM IST)
-  workflow_dispatch:  # Allows manual triggering
+    - cron: '0 * * * *'  # Every hour at minute 0
+  workflow_dispatch:
 
 jobs:
   update-sheet:

@@ -23,7 +23,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
 
-# User-Agent & Headers
+# Headers
 HEADERS = {
     "User-Agent": os.getenv("USER_AGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"),
     "Accept-Language": "en-US,en;q=0.9",
@@ -34,15 +34,10 @@ HEADERS = {
 CATEGORIES = {
     "books": "https://www.amazon.in/gp/bestsellers/books/",
     "electronics": "https://www.amazon.in/gp/bestsellers/electronics/",
-    "fashion": "https://www.amazon.in/gp/bestsellers/fashion/",
     "beauty": "https://www.amazon.in/gp/bestsellers/beauty/",
-    "home_kitchen": "https://www.amazon.in/gp/bestsellers/home/",
-    "appliances": "https://www.amazon.in/gp/bestsellers/appliances/",
     "baby": "https://www.amazon.in/gp/bestsellers/baby/",
-    "grocery": "https://www.amazon.in/gp/bestsellers/grocery/",
     "toys_games": "https://www.amazon.in/gp/bestsellers/toys/",
     "automotive": "https://www.amazon.in/gp/bestsellers/automotive/"
-    # Add more if needed
 }
 
 def fetch_products(category, url):
@@ -51,19 +46,15 @@ def fetch_products(category, url):
         print(f"[{category}] Status code: {res.status_code}")
 
         if "captcha" in res.text.lower():
-            print(f"[{category}] ⚠️ CAPTCHA detected or blocked.")
+            print(f"[{category}] ⚠️ CAPTCHA detected.")
             return []
 
         soup = BeautifulSoup(res.text, "lxml")
         product_list = soup.select("div.p13n-grid-content > div")
         print(f"[{category}] Products found: {len(product_list)}")
 
-        if not product_list:
-            print(f"[{category}] ⚠️ Selector not found. Amazon layout may have changed.")
-            return []
-
-        data = []
-        for item in product_list[:10]:
+        results = []
+        for i, item in enumerate(product_list[:10], 1):
             title_tag = item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_g3dy1")
             link_tag = item.select_one("a.a-link-normal")
             price_tag = item.select_one(".a-price span.a-offscreen")
@@ -72,42 +63,39 @@ def fetch_products(category, url):
             link = "https://www.amazon.in" + link_tag["href"] if link_tag else ""
             price = price_tag.text.strip() if price_tag else ""
 
-            data.append([
-                datetime.now().strftime("%Y-%m-%d %H:%M"),
-                category,
-                title,
-                link,
-                price
-            ])
-        return data
+            results.append([i, title, link, price])
+        return results
 
     except Exception as e:
         print(f"[{category}] ❌ Error: {e}")
         return []
 
-
-# Setup sheet headers
-try:
-    current = sheet.get_all_values()
-    headers = current[0] if current else []
-except Exception as e:
-    print(f"❌ Sheet fetch error: {e}")
-    headers = []
-
-if not headers or headers != ["Date", "Category", "Title", "URL", "Price"]:
-    sheet.clear()
-    sheet.append_row(["Date", "Category", "Title", "URL", "Price"])
-
-# Run scraper
-all_data = []
-for cat, url in CATEGORIES.items():
-    all_data.extend(fetch_products(cat, url))
-
-if all_data:
+def clear_sheet():
     try:
-        sheet.append_rows(all_data, value_input_option="USER_ENTERED")
-        print(f"✅ Added {len(all_data)} products.")
+        sheet.clear()
+        print("✅ Sheet cleared before writing new data.")
     except Exception as e:
-        print(f"❌ Sheet write failed: {e}")
-else:
-    print("⚠️ No data scraped. Check logs above.")
+        print(f"⚠️ Error clearing sheet: {e}")
+
+def write_category_section(start_row, category, data):
+    section_header = [[f"Category: {category}"]]
+    table_header = [["Sr No", "Product Name", "URL", "Price"]]
+    sheet.update(f"A{start_row}", section_header)
+    sheet.update(f"A{start_row + 1}", table_header)
+    sheet.update(f"A{start_row + 2}", data)
+
+def run_scraper():
+    clear_sheet()
+    current_row = 1
+
+    for cat, url in CATEGORIES.items():
+        products = fetch_products(cat, url)
+        if products:
+            write_category_section(current_row, cat, products)
+            current_row += len(products) + 4  # Leave space between tables
+        else:
+            print(f"[{cat}] No data written.")
+    print("✅ Scraper finished writing all categories.")
+
+if __name__ == "__main__":
+    run_scraper()
